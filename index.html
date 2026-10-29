@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Dustbin Dashboard</title>
+  <style>
+    :root {
+      --bg: #f5f7fb; --card: #ffffff; --text: #172033; --muted: #718096;
+      --line: #e7ebf2; --green: #15966a; --green-soft: #e6f7f0;
+      --red: #d94355; --red-soft: #fff0f1; --blue: #3678d4; --blue-soft: #edf4ff;
+      --amber: #a96912; --amber-soft: #fff6e7; --shadow: 0 8px 28px rgba(28, 43, 70, .055);
+    }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font-family:Inter, "Segoe UI", Arial, sans-serif; }
+    .wrap { width:min(1080px, calc(100% - 32px)); margin:0 auto; padding:30px 0 36px; }
+    header { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:34px; }
+    .brand { display:flex; align-items:center; gap:12px; }
+    .logo { width:44px; height:44px; display:grid; place-items:center; border-radius:13px; color:white;
+      background:#15966a; font-size:24px; }
+    h1 { margin:0; font-size:22px; letter-spacing:-.5px; }
+    .sub { color:var(--muted); font-size:13px; margin-top:4px; }
+    .connection { display:flex; align-items:center; gap:8px; padding:9px 12px; border:1px solid var(--line);
+      border-radius:999px; background:#fff; color:#536176; font-size:12px; }
+    .dot { width:8px; height:8px; border-radius:50%; background:#e1a33b; }
+    .dot.live { background:var(--green); } .dot.offline { background:var(--red); }
+    .intro { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:22px; }
+    .eyebrow { color:var(--green); font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:1.5px; }
+    h2 { margin:8px 0 6px; font-size:clamp(25px, 4vw, 34px); letter-spacing:-1px; }
+    .intro p { margin:0; color:var(--muted); font-size:14px; line-height:1.6; }
+    .updated { color:var(--muted); font-size:11px; text-align:right; line-height:1.8; }
+    .updated strong { color:#334155; font-size:12px; font-weight:650; }
+    .grid { display:grid; gap:16px; }
+    .stats { grid-template-columns:repeat(3, minmax(0,1fr)); }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:17px; padding:21px; box-shadow:var(--shadow); }
+    .card-head { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .label { color:#596579; font-size:13px; font-weight:650; }
+    .icon { width:38px; height:38px; border-radius:12px; display:grid; place-items:center; font-size:19px; background:#f1f5f9; }
+    .count { font-size:36px; font-weight:750; letter-spacing:-1.5px; margin:16px 0 4px; }
+    .hint { font-size:12px; color:var(--muted); }
+    .lower { grid-template-columns:1.1fr .9fr; margin-top:16px; }
+    .section-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:18px; }
+    h3 { margin:0; font-size:16px; letter-spacing:-.25px; }
+    .pill { background:#f1f5f9; color:#64748b; border-radius:7px; padding:6px 8px; font-size:10px; font-weight:800; letter-spacing:.6px; }
+    .bucket-list { display:grid; gap:11px; }
+    .bucket { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:13px;
+      border:1px solid var(--line); border-radius:13px; }
+    .bucket-main { display:flex; align-items:center; gap:11px; }
+    .bucket-icon { width:40px; height:40px; border-radius:12px; display:grid; place-items:center; background:#f3f6fa; font-size:19px; }
+    .bucket-name { font-size:13px; font-weight:700; }
+    .bucket-desc { margin-top:4px; color:var(--muted); font-size:11px; }
+    .status { display:flex; align-items:center; gap:6px; padding:7px 9px; border-radius:8px; font-size:10px; font-weight:800; white-space:nowrap; }
+    .status::before { content:""; width:6px; height:6px; border-radius:50%; background:currentColor; }
+    .status.available { background:var(--green-soft); color:var(--green); }
+    .status.full { background:var(--red-soft); color:var(--red); }
+    .status.unknown { background:var(--amber-soft); color:var(--amber); }
+    .rain-number { display:flex; align-items:baseline; gap:8px; margin:22px 0 4px; }
+    .rain-number strong { font-size:42px; letter-spacing:-1.5px; }
+    .rain-number span { color:var(--muted); font-size:12px; }
+    .meter { height:8px; border-radius:99px; background:#edf1f6; margin:19px 0 9px; overflow:hidden; }
+    .meter-fill { height:100%; width:0; border-radius:99px; background:linear-gradient(90deg, #15966a, #3678d4); transition:width .25s; }
+    .meter-labels { display:flex; justify-content:space-between; color:#94a0b2; font-size:10px; }
+    .sensor-info { display:flex; justify-content:space-between; gap:12px; border-top:1px solid var(--line); padding-top:14px; margin-top:22px; font-size:12px; }
+    .sensor-info span { color:var(--muted); } .sensor-info strong { font-weight:650; }
+    .chart-card { margin-top:16px; }
+    canvas { display:block; width:100%; height:135px; }
+    .chart-note { margin-top:8px; color:var(--muted); font-size:11px; }
+    .empty-note { color:var(--muted); font-size:13px; padding:12px 0; line-height:1.6; }
+    footer { display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; color:#8a96a8; font-size:11px; margin-top:22px; }
+    @media(max-width:700px) {
+      .stats, .lower { grid-template-columns:1fr; }
+      header { align-items:flex-start; }
+      .connection { font-size:0; padding:11px; } .connection .dot { width:9px; height:9px; }
+      .intro { align-items:flex-start; flex-direction:column; } .updated { text-align:left; }
+      .count { font-size:32px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <div class="brand">
+        <div class="logo">♻</div>
+        <div><h1>Smart Dustbin</h1><div class="sub">IoT Monitoring Dashboard</div></div>
+      </div>
+      <div class="connection"><span class="dot" id="connDot"></span><span id="connText">Connecting to Firebase…</span></div>
+    </header>
+
+    <section class="intro">
+      <div><div class="eyebrow">Live monitoring</div><h2>Dustbin overview</h2><p>Waste counts, bucket status and rain sensor readings.</p></div>
+      <div class="updated">LAST UPDATE<br><strong id="lastUpdate">Waiting for Firebase data</strong></div>
+    </section>
+
+    <section class="grid stats">
+      <article class="card">
+        <div class="card-head"><div class="label">Metal waste drops</div><div class="icon">🥫</div></div>
+        <div class="count" id="metalCount">—</div><div class="hint">Total successful drops</div>
+      </article>
+      <article class="card">
+        <div class="card-head"><div class="label">Wet waste drops</div><div class="icon">💧</div></div>
+        <div class="count" id="wetCount">—</div><div class="hint">Total successful drops</div>
+      </article>
+      <article class="card">
+        <div class="card-head"><div class="label">Dry waste drops</div><div class="icon">🍂</div></div>
+        <div class="count" id="dryCount">—</div><div class="hint">Total successful drops</div>
+      </article>
+    </section>
+
+    <section class="grid lower">
+      <article class="card">
+        <div class="section-head"><h3>Bucket status</h3><span class="pill">IR SENSORS</span></div>
+        <div class="bucket-list">
+          <div class="bucket"><div class="bucket-main"><div class="bucket-icon">🥫</div><div><div class="bucket-name">Metal bucket</div><div class="bucket-desc">Full sensor · GPIO 35</div></div></div><div class="status unknown" id="metalStatus">Waiting</div></div>
+          <div class="bucket"><div class="bucket-main"><div class="bucket-icon">💧</div><div><div class="bucket-name">Wet bucket</div><div class="bucket-desc">Full sensor · GPIO 33</div></div></div><div class="status unknown" id="wetStatus">Waiting</div></div>
+          <div class="bucket"><div class="bucket-main"><div class="bucket-icon">🍂</div><div><div class="bucket-name">Dry bucket</div><div class="bucket-desc">Full sensor · GPIO 32</div></div></div><div class="status unknown" id="dryStatus">Waiting</div></div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="section-head"><h3>Rain sensor</h3><span class="pill">GPIO 36</span></div>
+        <div class="rain-number"><strong id="rainValue">—</strong><span>/ 4095</span></div>
+        <div class="meter"><div class="meter-fill" id="rainMeter"></div></div>
+        <div class="meter-labels"><span>0</span><span>4095 maximum ADC</span></div>
+        <div class="sensor-info"><span>Sensor reading</span><strong id="rainState">Waiting for data</strong></div>
+        <div class="sensor-info"><span>Data source</span><strong>ESP32</strong></div>
+      </article>
+    </section>
+
+    <section class="card chart-card">
+      <div class="section-head"><h3>Rain sensor history</h3><span class="pill">LIVE SESSION</span></div>
+      <canvas id="rainChart"></canvas>
+      <div class="chart-note">The graph begins drawing when real sensor readings arrive. History is kept in this browser session.</div>
+    </section>
+
+    <footer><span>Smart Dustbin · ESP32 + Firebase Realtime Database</span><span id="modeLabel">Waiting for live connection</span></footer>
+  </main>
+
+  <script type="module">
+    // Paste your Firebase web configuration here after creating a Realtime Database.
+    const firebaseConfig = {
+      apiKey: "AIzaSyD6HVROZ2Nh-GQFaWjnhbhjpEQKkCOMe_0",
+      authDomain: "smart-dustbin-iot-1af82.firebaseapp.com",
+      databaseURL: "https://smart-dustbin-iot-1af82-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "smart-dustbin-iot-1af82",
+      storageBucket: "smart-dustbin-iot-1af82.firebasestorage.app",
+      messagingSenderId: "343140684222",
+      appId: "1:343140684222:web:1471d355b0baa6e4c3e9ef"
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const readings = [];
+    const MAX_POINTS = 40;
+    let receivedFirstData = false;
+
+    function connection(state, text) {
+      $("connDot").className = "dot " + state;
+      $("connText").textContent = text;
+    }
+
+    function setStatus(id, value) {
+      const el = $(id);
+      const full = value === true || value === 1 || value === "full";
+      const empty = value === false || value === 0 || value === "empty" || value === "available";
+      if (full) {
+        el.className = "status full";
+        el.textContent = "FULL";
+      } else if (empty) {
+        el.className = "status available";
+        el.textContent = "AVAILABLE";
+      } else {
+        el.className = "status unknown";
+        el.textContent = "Unknown";
+      }
+    }
+
+    function render(data) {
+      if (!data) {
+        $("modeLabel").textContent = "Connected; waiting for dustbin data";
+        return;
+      }
+      const metal = Number(data.metalCount ?? data.counters?.metal);
+      const wet = Number(data.wetCount ?? data.counters?.wet);
+      const dry = Number(data.dryCount ?? data.counters?.dry);
+      const rain = Number(data.rainReading ?? data.rain);
+
+      $("metalCount").textContent = Number.isFinite(metal) ? metal.toLocaleString() : "—";
+      $("wetCount").textContent = Number.isFinite(wet) ? wet.toLocaleString() : "—";
+      $("dryCount").textContent = Number.isFinite(dry) ? dry.toLocaleString() : "—";
+
+      setStatus("metalStatus", data.metalFull ?? data.bins?.metal?.full);
+      setStatus("wetStatus", data.wetFull ?? data.bins?.wet?.full);
+      setStatus("dryStatus", data.dryFull ?? data.bins?.dry?.full);
+
+      if (Number.isFinite(rain)) {
+        const safeRain = Math.max(0, Math.min(4095, rain));
+        $("rainValue").textContent = Math.round(safeRain).toString();
+        $("rainMeter").style.width = (safeRain / 4095 * 100) + "%";
+        $("rainState").textContent = "Live reading";
+        readings.push(safeRain);
+        if (readings.length > MAX_POINTS) readings.shift();
+        drawChart();
+      } else {
+        $("rainValue").textContent = "—";
+        $("rainState").textContent = "Waiting for data";
+      }
+
+      const stamp = data.updatedAt ?? data.timestamp;
+      $("lastUpdate").textContent = stamp ? formatTime(stamp) : new Date().toLocaleTimeString();
+      $("modeLabel").textContent = "Live data from Firebase";
+      receivedFirstData = true;
+    }
+
+    function formatTime(value) {
+      if (typeof value === "number") return new Date(value).toLocaleString();
+      if (typeof value === "string") {
+        const parsed = Date.parse(value);
+        return Number.isNaN(parsed) ? value : new Date(parsed).toLocaleString();
+      }
+      return new Date().toLocaleString();
+    }
+
+    function drawChart() {
+      const canvas = $("rainChart");
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.max(1, rect.width * dpr);
+      canvas.height = Math.max(1, rect.height * dpr);
+      const ctx = canvas.getContext("2d");
+      ctx.scale(dpr, dpr);
+      const w = rect.width, h = rect.height, pad = { l: 5, r: 5, t: 10, b: 12 };
+      const cw = w - pad.l - pad.r, ch = h - pad.t - pad.b;
+      ctx.clearRect(0, 0, w, h);
+      ctx.strokeStyle = "#edf0f5";
+      for (let i = 0; i < 4; i++) {
+        const y = pad.t + ch * i / 3;
+        ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(w - pad.r, y); ctx.stroke();
+      }
+      if (readings.length < 2) {
+        ctx.fillStyle = "#8a96a8"; ctx.font = "12px Arial";
+        ctx.fillText("Waiting for real sensor readings…", 8, h / 2);
+        return;
+      }
+      const pts = readings.map((v, i) => ({
+        x: pad.l + i * cw / (MAX_POINTS - 1),
+        y: pad.t + ch - (v / 4095) * ch
+      }));
+      ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
+      ctx.strokeStyle = "#15966a"; ctx.lineWidth = 2.5; ctx.lineJoin = "round"; ctx.lineCap = "round"; ctx.stroke();
+      const last = pts[pts.length - 1];
+      ctx.beginPath(); ctx.arc(last.x, last.y, 4, 0, Math.PI * 2); ctx.fillStyle = "#15966a"; ctx.fill();
+    }
+
+    const isConfigured = firebaseConfig.apiKey !== "YOUR_API_KEY"
+      && firebaseConfig.projectId !== "YOUR_PROJECT_ID"
+      && firebaseConfig.databaseURL !== "YOUR_DATABASE_URL";
+
+    if (!isConfigured) {
+      connection("offline", "Firebase setup required");
+      $("modeLabel").textContent = "Add Firebase configuration to enable live data";
+    } else {
+      try {
+        const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
+        const { getDatabase, ref, onValue } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js");
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        onValue(ref(db, ".info/connected"), (snap) => {
+          const connected = snap.val() === true;
+          connection(connected ? "live" : "offline", connected ? "Firebase connected" : "Connecting…");
+          if (!connected && receivedFirstData) $("modeLabel").textContent = "Connection lost; reconnecting…";
+        });
+        onValue(ref(db, "dustbin"), (snap) => render(snap.val()), (err) => {
+          connection("offline", "Database error");
+          $("modeLabel").textContent = "Firebase error: " + err.message;
+        });
+      } catch (err) {
+        connection("offline", "Connection failed");
+        $("modeLabel").textContent = "Firebase initialization failed: " + err.message;
+      }
+    }
+    window.addEventListener("resize", drawChart);
+    drawChart();
+  </script>
+</body>
+</html>
