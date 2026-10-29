@@ -6,8 +6,8 @@
 // ---------------- WIFI & FIREBASE ----------------
 // আপনার Wi-Fi / Hotspot-এর নাম এবং পাসওয়ার্ড দিন:
 // (মনে রাখবেন: WPA2 হটস্পটের পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে এবং হটস্পট 2.4 GHz হতে হবে)
-const char* WIFI_SSID     = "Salman"; // মোবাইলে ওয়াইফাইয়ের যে নাম দেখাচ্ছে হুবহু এখানে লিখুন
-const char* WIFI_PASSWORD = "salman09";
+const char* WIFI_SSID     = "Ami Gorib"; // মোবাইলে ওয়াইফাইয়ের যে নাম দেখাচ্ছে হুবহু এখানে লিখুন
+const char* WIFI_PASSWORD = "12345678";
 
 const char* FIREBASE_URL  = "https://smart-dustbin-iot-1af82-default-rtdb.asia-southeast1.firebasedatabase.app/dustbin.json";
 
